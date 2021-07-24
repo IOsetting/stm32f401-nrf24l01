@@ -126,9 +126,9 @@ u8   NRF24L01_Write_From_Buf(u8 reg,u8 *pBuf,u8 len);
 u8   NRF24L01_RxPacket(u8 *rx_buf);
 
 /**
-* Read received data and written to rx_buf, No blocking.
+* Handling IRQ in EXTI mode. Read received data and written to rx_buf
 */
-u8   NRF24L01_RxPacket_NoBlock(u8 *rx_buf);
+u8   NRF24L01_IRQ_Handler(u8 *rx_buf);
 
 /**
 * Send data in tx_buf and wait till data is sent or max re-tr reached

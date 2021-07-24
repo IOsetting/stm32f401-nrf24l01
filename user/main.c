@@ -19,44 +19,15 @@ extern u8 RX_BUF[];
 extern u8 TX_BUF[];
 
 
-void EXTILine13_Config(void)
-{
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-  /* Enable SYSCFG clock */
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-
-  GPIO_InitTypeDef   GPIO_InitStructure;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_13;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);
-  
-  /* Connect EXTI Line13 to PG13 pin */
-  SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOB, EXTI_PinSource13);
-  
-  EXTI_InitTypeDef   EXTI_InitStructure;
-  EXTI_InitStructure.EXTI_Line    = EXTI_Line13;
-  EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
-  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-  EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-  EXTI_Init(&EXTI_InitStructure);
-  
-  NVIC_InitTypeDef   NVIC_InitStructure;
-  NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01; 
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_Init(&NVIC_InitStructure);
-}
-
 void EXTI15_10_IRQHandler(void) {
-  printf("EXTI15_10_IRQHandler\r\n");
+  LED_On();
   /* Make sure that interrupt flag is set */
   if (EXTI_GetITStatus(EXTI_Line13) != RESET) {
-    NRF24L01_RxPacket_NoBlock(RX_BUF);
+    NRF24L01_IRQ_Handler(RX_BUF);
     /* Clear interrupt flag */
     EXTI_ClearITPendingBit(EXTI_Line13);
   }
+  LED_Off();
 }
 
 int main(void)
@@ -80,7 +51,6 @@ int main(void)
   }
 
   LED_Init();
-  EXTILine13_Config();
 
   while(1) {
     /*LED_On();
