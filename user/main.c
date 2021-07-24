@@ -13,11 +13,51 @@ u8 TX_ADDRESS[NRF24L01_ADDR_WIDTH] = {0x11,0x22,0x33,0x44,0x55};
 
 /*-----------------------------------------------------*/
 /* Here control sending:1 or receiving:0 mode */
-u8 Mode = 1;
+u8 Mode = 0;
 /*-----------------------------------------------------*/
 extern u8 RX_BUF[];
 extern u8 TX_BUF[];
 
+
+void EXTILine13_Config(void)
+{
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+  /* Enable SYSCFG clock */
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+
+  GPIO_InitTypeDef   GPIO_InitStructure;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_13;
+  GPIO_Init(GPIOB, &GPIO_InitStructure);
+  
+  /* Connect EXTI Line13 to PG13 pin */
+  SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOB, EXTI_PinSource13);
+  
+  EXTI_InitTypeDef   EXTI_InitStructure;
+  EXTI_InitStructure.EXTI_Line    = EXTI_Line13;
+  EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
+  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+  EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+  EXTI_Init(&EXTI_InitStructure);
+  
+  NVIC_InitTypeDef   NVIC_InitStructure;
+  NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01; 
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStructure);
+}
+
+void EXTI15_10_IRQHandler(void) {
+  printf("EXTI15_10_IRQHandler\r\n");
+  /* Make sure that interrupt flag is set */
+  if (EXTI_GetITStatus(EXTI_Line13) != RESET) {
+    NRF24L01_RxPacket_NoBlock(RX_BUF);
+    /* Clear interrupt flag */
+    EXTI_ClearITPendingBit(EXTI_Line13);
+  }
+}
 
 int main(void)
 {
@@ -39,12 +79,11 @@ int main(void)
     NRF24L01_RX_Mode(RX_ADDRESS, TX_ADDRESS);
   }
 
-  TIM2_Init();
-  TIM3_Init();
   LED_Init();
+  EXTILine13_Config();
 
   while(1) {
-    LED_On();
+    /*LED_On();
     NRF24L01_DumpConfig();
     if(Mode == 1) {
       u8 tmp[] = {0x1f, 
@@ -56,10 +95,10 @@ int main(void)
       NRF24L01_TxPacket(tmp, 32);
 
     } else if(Mode == 0) {
-      NRF24L01_RxPacket(RX_BUF);
+      // NRF24L01_RxPacket(RX_BUF);
     }
     LED_Off();
-    Systick_Delay_ms(2000);
+    Systick_Delay_ms(3000);*/
   }
 }
 

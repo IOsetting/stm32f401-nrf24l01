@@ -296,6 +296,30 @@ u8 NRF24L01_RxPacket(u8 *rx_buf)
       printf("%02X ", RX_BUF[i]);
     }
     result = 1;
+    NRF24L01_FlushRX();
+    NRF24L01_ClearIRQFlag(NRF24L01_FLAG_RX_DREADY);
+  }
+  CE(1);
+  return result;
+}
+
+/**
+* Read received data and written to rx_buf, No blocking.
+*/
+u8 NRF24L01_RxPacket_NoBlock(u8 *rx_buf)
+{
+  u8 status, result = 0;
+  CE(0);
+  status = NRF24L01_Read_Reg(NRF24L01_REG_STATUS);
+  printf("Reg status: %02X\r\n", status);
+
+  if(status & NRF24L01_FLAG_RX_DREADY) {
+    NRF24L01_Read_To_Buf(NRF24L01_CMD_RX_PLOAD_R, rx_buf, NRF24L01_PLOAD_WIDTH);
+    for (int i = 0; i < 32; i++) {
+      printf("%02X ", RX_BUF[i]);
+    }
+    result = 1;
+    NRF24L01_FlushRX();
     NRF24L01_ClearIRQFlag(NRF24L01_FLAG_RX_DREADY);
   }
   CE(1);
